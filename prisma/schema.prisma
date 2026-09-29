@@ -1,0 +1,200 @@
+generator client { provider = "prisma-client-js" }
+
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Role { TRAVELER SUPPLIER ADVISOR AGENCY_ADMIN PARTNER ADMIN SUPPORT }
+enum ExperienceStatus { DRAFT SUBMITTED UNDER_REVIEW REQUIRES_CHANGES APPROVED ACTIVE INACTIVE REJECTED }
+enum BookingStatus { DRAFT HELD PENDING CONFIRMED AMENDED COMPLETED CANCELED_BY_TRAVELER CANCELED_BY_SUPPLIER REJECTED NO_SHOW REFUNDED }
+enum PaymentStatus { UNPAID RESERVED AUTHORIZED PAID FAILED PARTIALLY_REFUNDED REFUNDED }
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String
+  passwordHash String
+  role Role @default(TRAVELER)
+  createdAt DateTime @default(now())
+  travelerProfile TravelerProfile?
+  supplier Supplier?
+  bookings Booking[]
+  reviews Review[]
+  wishlist Wishlist[]
+  notifications Notification[]
+  messages Message[]
+}
+
+model TravelerProfile {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredCurrency String @default("USD")
+  rewardBalance Int @default(0)
+}
+
+model Supplier {
+  id String @id @default(cuid())
+  ownerId String @unique
+  owner User @relation(fields: [ownerId], references: [id])
+  businessName String
+  description String?
+  verified Boolean @default(false)
+  experiences Experience[]
+  payoutAccounts SupplierPayoutAccount[]
+  documents SupplierDocument[]
+}
+
+model SupplierDocument {
+  id String @id @default(cuid())
+  supplierId String
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  type String
+  url String
+  status String @default("PENDING")
+}
+
+model SupplierPayoutAccount {
+  id String @id @default(cuid())
+  supplierId String
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  provider String
+  last4 String
+  status String @default("VERIFIED")
+}
+
+model Destination {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  country String
+  region String?
+  description String
+  imageUrl String
+  latitude Float?
+  longitude Float?
+  attractions Attraction[]
+  experiences Experience[]
+}
+
+model Attraction {
+  id String @id @default(cuid())
+  destinationId String
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  name String
+  description String?
+  imageUrl String?
+  experiences Experience[]
+}
+
+model Category {
+  id String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  icon String?
+  experiences Experience[]
+}
+
+model Experience {
+  id String @id @default(cuid())
+  supplierId String
+  destinationId String
+  categoryId String
+  attractionId String?
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  destination Destination @relation(fields: [destinationId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  attraction Attraction? @relation(fields: [attractionId], references: [id])
+  title String
+  slug String @unique
+  description String
+  overview String
+  imageUrl String
+  images Json
+  duration String
+  languages Json
+  rating Float @default(0)
+  reviewCount Int @default(0)
+  priceFrom Int
+  originalPrice Int?
+  freeCancellation Boolean @default(true)
+  payLater Boolean @default(false)
+  status ExperienceStatus @default(DRAFT)
+  featured Boolean @default(false)
+  options ExperienceOption[]
+  reviews Review[]
+  bookingItems BookingItem[]
+  wishlistItems WishlistItem[]
+  createdAt DateTime @default(now())
+  @@index([destinationId, categoryId])
+  @@index([status, featured])
+}
+
+model ExperienceOption {
+  id String @id @default(cuid())
+  experienceId String
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  name String
+  description String?
+  price Int
+  duration String
+  startTimes Json
+  capacity Int @default(12)
+  pickup Boolean @default(false)
+  languages Json
+  inclusions Json
+  active Boolean @default(true)
+  schedules Schedule[]
+}
+
+model Schedule {
+  id String @id @default(cuid())
+  optionId String
+  option ExperienceOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  date DateTime
+  startTime String
+  capacity Int
+  remaining Int
+  @@unique([optionId, date, startTime])
+}
+
+model Booking {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  reference String @unique
+  status BookingStatus @default(DRAFT)
+  paymentStatus PaymentStatus @default(UNPAID)
+  total Int
+  currency String @default("USD")
+  travelDate DateTime?
+  createdAt DateTime @default(now())
+  items BookingItem[]
+  payment Payment?
+  voucher Voucher?
+  commission Commission?
+  @@index([userId, status])
+}
+
+model BookingItem {
+  id String @id @default(cuid())
+  bookingId String
+  experienceId String
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  experience Experience @relation(fields: [experienceId], references: [id])
+  optionName String
+  date DateTime
+  startTime String
+  travelers Json
+  pickupDetails String?
+  answers Json?
+  unitPrice Int
+  quantity Int @default(1)
+}
+
+model Payment { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); amount Int; status PaymentStatus; provider String @default("Travel Buddy Simulated Pay"); createdAt DateTime @default(now()) }
+model Voucher { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); qrPayload String; issuedAt DateTime @default(now()) }
+model Review { id String @id @default(cuid()); experienceId String; userId String; experience Experience @relation(fields: [experienceId], references: [id]); user User @relation(fields: [userId], references: [id]); rating Int; title String; body String; verified Boolean @default(true); response String?; createdAt DateTime @default(now()) }
+model Wishlist { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id], onDelete: Cascade); name String @default("My wishlist"); items WishlistItem[] }
+model WishlistItem { id String @id @default(cuid()); wishlistId String; experienceId String; wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade); experience Experience @relation(fields: [experienceId], references: [id]); @@unique([wishlistId, experienceId]) }
+model Notification { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id], onDelete: Cascade); title String; body String; read Boolean @default(false); createdAt DateTime @default(now()) }
+model Message { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id]); threadId String; body String; createdAt DateTime @default(now()) }
+model Commission { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); source String; percentage Float; amount Int; status String @default("PENDING") }

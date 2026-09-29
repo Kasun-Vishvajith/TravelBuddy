@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: travel-buddy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: travelbuddy
+      POSTGRES_PASSWORD: travelbuddy
+      POSTGRES_DB: travelbuddy
+    ports:
+      - "5432:5432"
+    volumes:
+      - travel_buddy_pgdata:/var/lib/postgresql/data
+
+volumes:
+  travel_buddy_pgdata:
