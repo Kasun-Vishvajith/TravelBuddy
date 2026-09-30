@@ -1,6 +1,23 @@
-node_modules
-.next
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Local environment files; keep the safe template tracked.
 .env
-.env.local
-prisma/dev.db
+.env.*
+!.env.example
+
+# Local databases and generated Prisma artifacts.
+prisma/*.db
+prisma/*.db-journal
+
+# Build, cache, and runtime output.
 *.log
+*.tsbuildinfo
+
+# Local editor and operating-system files.
+.DS_Store
+.idea/
+.vscode/

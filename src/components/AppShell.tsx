@@ -2,17 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ChevronDown, Compass, MapPinned, Search, ShoppingBag, UserRound } from "lucide-react";
+import { CalendarDays, Compass, MapPinned, Search, ShoppingBag, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const portals = [
-  { label: "Traveler marketplace", href: "/" },
-  { label: "Traveler account", href: "/account" },
-  { label: "Supplier center", href: "/supplier" },
-  { label: "Advisor portal", href: "/advisor" },
-  { label: "Partner portal", href: "/partner" },
-  { label: "Admin console", href: "/admin" },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="desktop-nav"><Link className={pathname === "/" ? "active" : ""} href="/">Explore</Link><Link className={pathname === "/search" ? "active" : ""} href="/search">Discover</Link><Link className={pathname === "/wishlist" ? "active" : ""} href="/wishlist">Trips</Link><Link className={pathname === "/guide" ? "active" : ""} href="/guide">Guides</Link></nav>
         <div className="header-actions">
           <Link href="/cart" className="cart-button"><ShoppingBag size={18} /><span>Cart</span>{cartCount > 0 && <b>{cartCount}</b>}</Link>
-          <details className="portal-switcher"><summary className="account-button"><UserRound size={17} /><span>Hi, Maya</span><ChevronDown size={14} /></summary><div className="portal-menu"><span className="portal-menu-label">Demo workspace</span>{portals.map((portal) => <Link key={portal.href} href={portal.href}>{portal.label}</Link>)}</div></details>
+          <Link href="/login" className="account-button"><UserRound size={17} /><span>Log in</span></Link>
         </div>
       </header>
       <main>{children}</main>
