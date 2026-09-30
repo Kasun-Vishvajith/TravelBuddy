@@ -1,11 +1,56 @@
-generator client { provider = "prisma-client-js" }
+generator client {
+  provider = "prisma-client-js"
+}
 
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-enum Role { TRAVELER SUPPLIER ADVISOR AGENCY_ADMIN PARTNER ADMIN SUPPORT }
-enum ExperienceStatus { DRAFT SUBMITTED UNDER_REVIEW REQUIRES_CHANGES APPROVED ACTIVE INACTIVE REJECTED }
-enum BookingStatus { DRAFT HELD PENDING CONFIRMED AMENDED COMPLETED CANCELED_BY_TRAVELER CANCELED_BY_SUPPLIER REJECTED NO_SHOW REFUNDED }
-enum PaymentStatus { UNPAID RESERVED AUTHORIZED PAID FAILED PARTIALLY_REFUNDED REFUNDED }
+enum Role {
+  TRAVELER
+  SUPPLIER
+  ADVISOR
+  AGENCY_ADMIN
+  PARTNER
+  ADMIN
+  SUPPORT
+}
+
+enum ExperienceStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  REQUIRES_CHANGES
+  APPROVED
+  ACTIVE
+  INACTIVE
+  REJECTED
+}
+
+enum BookingStatus {
+  DRAFT
+  HELD
+  PENDING
+  CONFIRMED
+  AMENDED
+  COMPLETED
+  CANCELED_BY_TRAVELER
+  CANCELED_BY_SUPPLIER
+  REJECTED
+  NO_SHOW
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  RESERVED
+  AUTHORIZED
+  PAID
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
 
 model User {
   id String @id @default(cuid())
@@ -190,11 +235,81 @@ model BookingItem {
   quantity Int @default(1)
 }
 
-model Payment { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); amount Int; status PaymentStatus; provider String @default("Travel Buddy Simulated Pay"); createdAt DateTime @default(now()) }
-model Voucher { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); qrPayload String; issuedAt DateTime @default(now()) }
-model Review { id String @id @default(cuid()); experienceId String; userId String; experience Experience @relation(fields: [experienceId], references: [id]); user User @relation(fields: [userId], references: [id]); rating Int; title String; body String; verified Boolean @default(true); response String?; createdAt DateTime @default(now()) }
-model Wishlist { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id], onDelete: Cascade); name String @default("My wishlist"); items WishlistItem[] }
-model WishlistItem { id String @id @default(cuid()); wishlistId String; experienceId String; wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade); experience Experience @relation(fields: [experienceId], references: [id]); @@unique([wishlistId, experienceId]) }
-model Notification { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id], onDelete: Cascade); title String; body String; read Boolean @default(false); createdAt DateTime @default(now()) }
-model Message { id String @id @default(cuid()); userId String; user User @relation(fields: [userId], references: [id]); threadId String; body String; createdAt DateTime @default(now()) }
-model Commission { id String @id @default(cuid()); bookingId String @unique; booking Booking @relation(fields: [bookingId], references: [id]); source String; percentage Float; amount Int; status String @default("PENDING") }
+model Payment {
+  id         String        @id @default(cuid())
+  bookingId  String        @unique
+  booking    Booking       @relation(fields: [bookingId], references: [id])
+  amount     Int
+  status     PaymentStatus
+  provider   String        @default("Travel Buddy Simulated Pay")
+  createdAt  DateTime      @default(now())
+}
+
+model Voucher {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  qrPayload  String
+  issuedAt   DateTime @default(now())
+}
+
+model Review {
+  id           String     @id @default(cuid())
+  experienceId String
+  userId       String
+  experience   Experience @relation(fields: [experienceId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+  rating       Int
+  title        String
+  body         String
+  verified     Boolean    @default(true)
+  response     String?
+  createdAt    DateTime   @default(now())
+}
+
+model Wishlist {
+  id       String         @id @default(cuid())
+  userId   String
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name     String         @default("My wishlist")
+  items    WishlistItem[]
+}
+
+model WishlistItem {
+  id         String    @id @default(cuid())
+  wishlistId String
+  experienceId String
+  wishlist   Wishlist  @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  experience Experience @relation(fields: [experienceId], references: [id])
+
+  @@unique([wishlistId, experienceId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  threadId  String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Commission {
+  id         String  @id @default(cuid())
+  bookingId  String  @unique
+  booking    Booking @relation(fields: [bookingId], references: [id])
+  source     String
+  percentage Float
+  amount     Int
+  status     String  @default("PENDING")
+}
