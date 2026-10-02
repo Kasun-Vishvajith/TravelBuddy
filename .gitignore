@@ -21,3 +21,5 @@ prisma/*.db-journal
 .DS_Store
 .idea/
 .vscode/
+.next-ui-preview/
+.next-ui-build/

@@ -30,6 +30,8 @@ export type Listing = {
     review: string;
 };
 export type DemoBooking = {
+    experienceIds?: string[];
+    journeySummary?: string;
     id: string;
     experienceId: string;
     traveler: string;
@@ -84,7 +86,7 @@ export type DemoData = {
 };
 export const DEMO_KEY = 'tb-role-demo-v1';
 export const SESSION_KEY = 'tb-demo-session';
-const travelerKeys = ['tb-journey-plans', 'tb-checkout-plan', 'tb-bookings', 'tb-saved-experiences', 'tb-cart-experience', 'tb-cart-count'];
+const travelerKeys = ['tb-journey-plans', 'tb-checkout-plan', 'tb-bookings', 'tb-saved-experiences', 'tb-cart-experience', 'tb-cart-count', 'tb-trip-extras', 'tb-trip-transport', 'tb-portable-history', 'tb-booking-choices'];
 function switchTraveler(account: DemoAccount | null) {
     const previous = window.localStorage.getItem('tb-traveler-owner') || 'guest';
     const next = account?.role === 'traveler' ? account.id : 'guest';
@@ -116,9 +118,9 @@ export const predefined: DemoAccount[] = [
     { id: 'admin-demo', role: 'admin', name: 'Sam Fernando', email: 'admin@travelbuddy.demo', createdAt: '2026-10-01', seeded: true, status: 'Active', review: 'Approved', details: {} }
 ];
 export function seedData(): DemoData {
-    const sampleAccounts: DemoAccount[] = [{ id: 'provider-sample', role: 'provider', name: 'World Local Experiences', email: 'world@travelbuddy.demo', createdAt: '2026-09-20', seeded: true, status: 'Active', review: 'Pending', details: { contact: 'Taylor Lane', location: 'Ubud, Kyoto, Amalfi, New York', description: 'Sample international experience collection.' } }, { id: 'traveler-sample', role: 'traveler', name: 'Maya Chen', email: 'maya@travelbuddy.demo', createdAt: '2026-09-21', seeded: true, status: 'Active', review: 'Approved', details: { country: 'Singapore' } }, { id: 'traveler-sample-2', role: 'traveler', name: 'Liam Reed', email: 'liam@travelbuddy.demo', createdAt: '2026-09-22', seeded: true, status: 'Active', review: 'Approved', details: { country: 'Ireland' } }, ...guideProfiles.slice(1).map(g => ({ id: `guide-${g.id}`, role: 'guide' as Role, name: g.name, email: `${g.id}@travelbuddy.demo`, createdAt: '2026-09-23', seeded: true, status: 'Active', review: 'Approved', details: { location: g.zone, languages: g.languages.join(', '), specialties: g.specialties.join(', '), biography: g.bio, image: g.image } }))];
+    const sampleAccounts: DemoAccount[] = [{ id: 'provider-sample', role: 'provider', name: 'World Local Experiences', email: 'world@travelbuddy.demo', createdAt: '2026-09-20', seeded: true, status: 'Active', review: 'Pending', details: { contact: 'Taylor Lane', location: 'Ubud, Kyoto, Amalfi, New York', description: 'Sample international experience collection.' } }, { id: 'traveler-sample', role: 'traveler', name: 'Maya Chen', email: 'maya@travelbuddy.demo', createdAt: '2026-09-21', seeded: true, status: 'Active', review: 'Approved', details: { country: 'Singapore',location:'Colombo',languages:'English, Mandarin',interests:'Food, culture',visibility:'Community' } }, { id: 'traveler-sample-2', role: 'traveler', name: 'Liam Reed', email: 'liam@travelbuddy.demo', createdAt: '2026-09-22', seeded: true, status: 'Active', review: 'Approved', details: { country: 'Ireland',location:'Galle Fort',languages:'English',interests:'Photography, history',visibility:'Community' } }, ...guideProfiles.slice(1).map(g => ({ id: `guide-${g.id}`, role: 'guide' as Role, name: g.name, email: `${g.id}@travelbuddy.demo`, createdAt: '2026-09-23', seeded: true, status: 'Active', review: 'Approved', details: { location: g.zone, languages: g.languages.join(', '), specialties: g.specialties.join(', '), biography: g.bio, image: g.image } }))];
     return { accounts: [...predefined, ...sampleAccounts].map(a => ({ ...a, details: { ...a.details } })), listings: experiences.map((e, i) => ({ id: e.id, owner: i < 3 ? 'provider-demo' : 'provider-sample', title: e.title, destination: e.destination, category: e.category, price: e.price, image: e.image, description: e.description, itinerary: e.itinerary.map(s => `${s.time} — ${s.title}`).join('\n'), capacity: 12, date: '2026-10-18', time: e.options[0].times[0], status: 'Active', review: i === 3 ? 'Pending' : 'Approved' })),
-        bookings: [{ id: 'TB-DEMO-101', experienceId: 'colombo-food', traveler: 'Alex Morgan', travelerId: 'traveler-demo', date: '2026-10-18', time: '17:00', participants: 2, amount: 84, meeting: 'Colombo Fort Railway Station', status: 'Confirmed' }, { id: 'TB-DEMO-102', experienceId: 'sigiriya-dawn', traveler: 'Maya Chen', travelerId: 'traveler-sample', date: '2026-10-19', time: '04:30', participants: 4, amount: 272, meeting: 'Hotel lobby', status: 'Pending' }, { id: 'TB-DEMO-103', experienceId: 'yala-safari', traveler: 'Liam Reed', travelerId: 'traveler-sample-2', date: '2026-09-28', time: '05:00', participants: 2, amount: 148, meeting: 'Tissamaharama hotel lobby', status: 'Completed' }],
+        bookings: [{ id: 'TB-DEMO-101', experienceId: 'colombo-food', traveler: 'Alex Morgan', travelerId: 'traveler-demo', date: '2026-10-18', time: '17:00', participants: 2, amount: 84, meeting: 'Colombo Fort Railway Station', status: 'Confirmed' }, { id: 'TB-DEMO-102', experienceId: 'sigiriya-dawn', traveler: 'Maya Chen', travelerId: 'traveler-sample', date: '2026-10-19', time: '04:30', participants: 4, amount: 272, meeting: 'Hotel lobby', status: 'Pending' }, { id: 'TB-DEMO-103', experienceId: 'yala-safari', traveler: 'Liam Reed', travelerId: 'traveler-sample-2', date: '2026-09-28', time: '05:00', participants: 2, amount: 148, meeting: 'Tissamaharama hotel lobby', status: 'Completed' }, {id:'TB-DEMO-104',experienceId:'colombo-food',traveler:'Alex Morgan',travelerId:'traveler-demo',date:'2026-09-25',time:'17:00',participants:2,amount:84,meeting:'Colombo Fort Railway Station',status:'Completed'}],
         sessions: [{ id: 'GS-101', guideId: 'guide-demo', traveler: 'Maya Chen', date: '2026-10-18', time: '09:00', duration: 2, language: 'English', zone: 'Galle Fort', category: 'History walk', question: 'Could we visit a quiet courtyard?', status: 'Accepted' }, { id: 'GS-102', guideId: 'guide-demo', traveler: 'Liam Reed', date: '2026-10-20', time: '15:00', duration: 3, language: 'English', zone: 'Galle Fort', category: 'Food walk', question: 'Interested in local family recipes.', status: 'Accepted' }, { id: 'GR-103', guideId: 'guide-demo', traveler: 'Alex Morgan', date: '2026-10-22', time: '10:00', duration: 2, language: 'English', zone: 'Fort entrance', category: 'Photography walk', question: 'Where is the best morning light?', status: 'New' }, { id: 'GR-104', guideId: 'guide-demo', traveler: 'Sofia Rossi', date: '2026-10-23', time: '14:00', duration: 1, language: 'English', zone: 'Galle Fort', category: 'Local assistance', question: 'An easy introduction to the fort.', status: 'New' }, { id: 'GR-105', guideId: 'guide-demo', traveler: 'James Hill', date: '2026-09-20', time: '10:00', duration: 2, language: 'English', zone: 'Galle Fort', category: 'History walk', question: '', status: 'Completed' }, { id: 'GR-106', guideId: 'guide-demo', traveler: 'Aiko Sato', date: '2026-09-18', time: '10:00', duration: 1, language: 'English', zone: 'Galle Fort', category: 'Walking tour', question: '', status: 'Expired' }],
         availability: ['provider-demo', 'guide-demo'].flatMap(owner => [18, 19, 20, 21, 22].map(day => ({ owner, date: `2026-10-${day}`, available: day !== 21, start: '09:00', end: '17:00', capacity: owner === 'guide-demo' ? 4 : 12, area: owner === 'guide-demo' ? 'Galle Fort' : 'Colombo' }))),
         activity: [{ id: 'activity-seed', at: '2026-10-01T08:00:00+05:30', actor: 'Demo setup', action: 'Created sample marketplace records', item: 'TravelBuddy' }], content: experiences.slice(0, 4).map(e => ({ id: e.id, active: true })) };
@@ -126,7 +128,7 @@ export function seedData(): DemoData {
 export function getDemo(): DemoData {
     const fixtures=seedData();const stored=readLocal<DemoData|null>(DEMO_KEY,null);
     if(!stored||!Array.isArray(stored.accounts)||!Array.isArray(stored.listings))return fixtures;
-    return {...stored,accounts:[...stored.accounts,...fixtures.accounts.filter(a=>!stored.accounts.some(s=>s.id===a.id))]};
+    return {...stored,bookings:[...stored.bookings,...fixtures.bookings.filter(b=>b.id==="TB-DEMO-104"&&!stored.bookings.some(s=>s.id===b.id))],accounts:[...stored.accounts,...fixtures.accounts.filter(a=>!stored.accounts.some(s=>s.id===a.id))]};
 }
 export function saveDemo(data: DemoData, action?: string, item = '') {
     const session = getSession();
@@ -175,15 +177,16 @@ export function registerAccount(role: Role, name: string, email: string, details
     const data = getDemo();
     if (data.accounts.some(a => a.email.toLowerCase() === email.trim().toLowerCase()))
         throw new Error('This email already exists in the local demo.');
-    const account: DemoAccount = { id: crypto.randomUUID(), role, name: name.trim(), email: email.trim().toLowerCase(), createdAt: new Date().toISOString().slice(0, 10), seeded: false, status: 'Demo setup', review: role === 'traveler' ? 'Approved' : 'Pending', details };
+    const account: DemoAccount = { id: crypto.randomUUID(), role, name: name.trim(), email: email.trim().toLowerCase(), createdAt: new Date().toISOString().slice(0, 10), seeded: false, status: 'Demo setup', review: role === 'traveler' ? 'Approved' : 'Pending', details: role==='traveler'?{...details,visibility:'Private'}:details };
     data.accounts.push(account);
     saveDemo(data, 'Registered local demo account', account.name);
     return account;
 }
 export function resetDemo() {
     window.sessionStorage.removeItem(SESSION_KEY);
-    const keys = [DEMO_KEY, 'tb-traveler-owner', 'tb-traveler-storage', 'tb-journey-plans', 'tb-checkout-plan', 'tb-bookings', 'tb-saved-experiences', 'tb-cart-experience', 'tb-cart-count', 'tb-demo-profile', 'tb-guide-session', 'tb-supplier-draft', 'tb-demo-notifications', 'tb-email-preference', 'tb-last-travelers'];
+    const keys = ['tb-booking-choices','tb-provider-live','tb-conversations','tb-community-requests','tb-local-reviews','tb-portable-history','tb-trip-transport','tb-collaborations', DEMO_KEY, 'tb-traveler-owner', 'tb-traveler-storage', 'tb-journey-plans', 'tb-checkout-plan', 'tb-bookings', 'tb-saved-experiences', 'tb-cart-experience', 'tb-cart-count', 'tb-demo-profile', 'tb-guide-session', 'tb-supplier-draft', 'tb-demo-notifications', 'tb-email-preference', 'tb-last-travelers'];
     keys.forEach(k => window.localStorage.removeItem(k));
+    Object.keys(window.localStorage).filter(k=>k.startsWith('tb-session-questions:')||k.startsWith('tb-collaborations:')||k==='tb-trip-extras'||k==='tb-moderation-hidden').forEach(k=>window.localStorage.removeItem(k));
     writeLocal(DEMO_KEY, seedData(), 'tb-demo-updated');
     window.dispatchEvent(new Event('tb-session-updated'));
     window.dispatchEvent(new Event('tb-traveler-updated'));
@@ -198,4 +201,4 @@ export function toExperience(l: Listing): Experience {
 }
 export function publicExperiences() { return getDemo().listings.filter(l => l.status === 'Active').map(toExperience); }
 export function travelerBookings(): Booking[] { const account = getSession(); if (!account)
-    return []; return getDemo().bookings.filter(b => b.travelerId === account.id).map(b => { const l = getDemo().listings.find(l => l.id === b.experienceId)!; return { id: b.id, title: l?.title || 'Demo experience', image: l?.image || '', experienceIds: [b.experienceId], date: b.date, time: b.time, travelers: b.participants, total: b.amount, payLater: false, meetingPoint: b.meeting, createdAt: '2026-10-01', status: b.status }; }); }
+    return []; return getDemo().bookings.filter(b => b.travelerId === account.id).map(b => { const l = getDemo().listings.find(l => l.id === b.experienceId)!; return { id: b.id, title: l?.title || 'Demo experience', image: l?.image || '', experienceIds: b.experienceIds || [b.experienceId], date: b.date, time: b.time, travelers: b.participants, total: b.amount, payLater: false, meetingPoint: b.meeting, createdAt: '2026-10-01', status: b.status, journeySummary:b.journeySummary }; }); }
