@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 
 const demoRoles = [
-  { eyebrow: "For travelers", name: "Maya Chen", role: "Traveler account", description: "Discover experiences, save ideas and turn them into a bookable trip.", href: "/account", icon: <Compass size={20} />, tone: "orange", features: ["Explore the marketplace", "Plan and share trips", "Manage bookings and rewards"] },
-  { eyebrow: "For travelers on the move", name: "Travel Buddy Now", role: "Local guide experience", description: "Find a nearby local, start a live session and see the guide handoff flow.", href: "/guide", icon: <MapPinned size={20} />, tone: "mint", features: ["Choose a live zone", "Match with a local guide", "Run a simulated session"] },
-  { eyebrow: "For experience operators", name: "Ari Perera", role: "Supplier center", description: "Publish experiences and keep bookings, availability and performance moving.", href: "/supplier", icon: <Package size={20} />, tone: "sand", features: ["Manage experiences", "Review upcoming bookings", "Create a new product"] },
+  { eyebrow: "For travelers", name: "Maya Chen", role: "Traveler account", description: "Discover experiences, save ideas and turn them into a bookable trip.", href: "/account", icon: <Compass size={20} />, tone: "orange", features: ["Explore the marketplace", "Plan and share trips", "Manage demo bookings"] },
+  { eyebrow: "For travelers on the move", name: "Travel Buddy Now", role: "Local guide experience", description: "Explore sample local profiles and try a simulated guide session.", href: "/guide", icon: <MapPinned size={20} />, tone: "mint", features: ["Choose a destination", "Explore sample guides", "Run a simulated session"] },
+  { eyebrow: "For experience operators", name: "Ari Perera", role: "Supplier center", description: "Browse sample experiences and save a local listing draft.", href: "/supplier", icon: <Package size={20} />, tone: "sand", features: ["Manage experiences", "Review upcoming bookings", "Create a new product"] },
   { eyebrow: "For travel professionals", name: "Maya Chen", role: "Advisor portal", description: "Curate recommendations for clients and track bookings and commissions.", href: "/advisor", icon: <Users size={20} />, tone: "lavender", features: ["Book for a client", "Build a client shortlist", "Share tracked recommendations"] },
   { eyebrow: "For growth partners", name: "Wanderwise Media", role: "Partner portal", description: "Build referral links and widgets while following clicks, bookings and earnings.", href: "/partner", icon: <BarChart3 size={20} />, tone: "blue", features: ["Create affiliate links", "Track referral performance", "View commission activity"] },
   { eyebrow: "For platform operations", name: "Jordan Lee", role: "Admin console", description: "See the marketplace from the inside: products, suppliers, travelers and health.", href: "/admin", icon: <ShieldCheck size={20} />, tone: "ink", features: ["Review marketplace activity", "Monitor platform health", "Open the audit trail"] },
@@ -47,13 +47,13 @@ export default function LoginPage() {
               <h3>{demo.role}</h3><p>{demo.description}</p>
               <div className="demo-role-user"><UserRound size={14} /><span>Demo identity</span><strong>{demo.name}</strong></div>
               <ul className="demo-role-features">{demo.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
-              <Link className="button button-secondary demo-role-button" href={demo.href}>Login as {demo.role === "Local guide experience" ? "a local guide" : demo.role.replace(" portal", "").replace(" center", "").replace(" console", "").toLowerCase()}<ArrowRight size={15} /></Link>
+              <Link className="button button-secondary demo-role-button" href={demo.href}>Explore {demo.role === "Local guide experience" ? "a local guide" : demo.role.replace(" portal", "").replace(" center", "").replace(" console", "").toLowerCase()}<ArrowRight size={15} /></Link>
             </article>
           ))}
         </section>
 
         <section className="demo-login-footer-card"><div className="demo-login-footer-icon"><CalendarDays size={18} /></div><div><strong>Want the full traveler flow?</strong><p>Start at the marketplace, save an experience, build a connected journey and continue to simulated checkout.</p></div><Link className="button button-primary" href="/">Open marketplace <ArrowRight size={15} /></Link></section>
-        <p className="demo-login-standard-link">Have an account? <Link href="/login/standard">Use standard login</Link> · <Link href="/register">Create an account</Link></p>
+        <p className="demo-login-standard-link">Want your own demo profile? <Link href="/login/standard">Traveler demo access</Link> · <Link href="/register">Create an account</Link></p>
       </div>
     </div>
   );

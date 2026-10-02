@@ -1,0 +1,12 @@
+"use client";
+import Link from "next/link";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { writeLocal } from "@/lib/traveler";
+import { experiences } from "@/lib/catalog";
+import { Photo } from "./Photo";
+export function AuthForm({register=false}:{register?:boolean}) {
+  const [name,setName] = useState(""); const [email,setEmail] = useState("");const [error,setError] = useState("");
+  function submit(e:React.FormEvent) {e.preventDefault();try {writeLocal("tb-demo-profile",{name:name.trim() || "Traveler",email});window.location.href = "/account";} catch {setError("Your profile could not be saved. Allow browser storage and try again.");}}
+  return <div className="auth-page"><div className="auth-image"><Photo src={experiences[1].image} alt="Sri Lanka landscape" priority /><div className="auth-image-copy"><h2>The next story<br />starts with you.</h2><p>Explore a little. Discover something new.</p></div></div><div className="auth-content"><h1>{register ? "Make room for discovery." : "Welcome to your travel space."}</h1><p>{register ? "Create a local demo profile and make the workspace yours." : "Enter your details to personalize this demo."}</p><form onSubmit={submit}><div className="field"><label htmlFor="profile-name">Your name</label><input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required maxLength={60} placeholder="How should we call you?" /></div><div className="field"><label htmlFor="profile-email">Email address</label><input id="profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required placeholder="you@example.com" /></div><div className="notice"><ShieldCheck size={18} /><span>This is demo access. No account is created on a server, and no password is collected. Details are stored only in this browser.</span></div>{error && <p className="checkout-error" role="alert">{error}</p>}<button type="submit" className="button button-primary button-wide">{register ? "Create demo profile" : "Continue to demo profile"}<ArrowRight size={17} /></button></form><p className="auth-links">{register ? "Already exploring?" : "New to TravelBuddy?"} <Link href={register ? "/login/standard" : "/register"}>{register ? "Continue with demo access" : "Set up your profile"}</Link></p><Link href="/login" className="text-link">Explore all demo workspaces <ArrowRight size={15} /></Link></div></div>;
+}
