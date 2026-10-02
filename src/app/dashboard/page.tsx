@@ -1,0 +1,1 @@
+import { TravelerDashboard } from "@/components/DemoWorkspace"; export default function Page(){return <TravelerDashboard/>;}

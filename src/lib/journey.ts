@@ -1,4 +1,5 @@
 import { experiences, type Experience } from "@/lib/catalog";
+import { getDemo, toExperience } from './demo';
 
 export const JOURNEY_PLANS_KEY = "tb-journey-plans";
 export const JOURNEY_CHECKOUT_KEY = "tb-checkout-plan";
@@ -15,6 +16,7 @@ export type JourneyPlan = {
   id: string;
   name: string;
   days: number;
+  startDate?: string;
   createdAt: string;
   events: JourneyEvent[];
 };
@@ -44,6 +46,7 @@ export function createDemoJourneyPlan(): JourneyPlan {
   return {
     id: "journey-sri-lanka-highlights",
     name: "Sri Lanka highlights",
+    startDate: "2026-10-18",
     days: 3,
     createdAt: "2026-09-30T00:00:00.000Z",
     events: [
@@ -55,7 +58,8 @@ export function createDemoJourneyPlan(): JourneyPlan {
 }
 
 export function getExperienceForJourneyEvent(event: JourneyEvent): Experience | undefined {
-  return experiences.find((experience) => experience.id === event.id);
+  const listing=getDemo().listings.find(item=>item.id===event.id);
+  return listing?toExperience(listing):experiences.find((experience) => experience.id === event.id);
 }
 
 export function encodeJourneyPlan(plan: JourneyPlan): string {
@@ -98,7 +102,7 @@ export function readJourneyPlans(): JourneyPlan[] {
     const stored = window.localStorage.getItem(JOURNEY_PLANS_KEY);
     if (!stored) return [createDemoJourneyPlan()];
     const plans = JSON.parse(stored) as JourneyPlan[];
-    return Array.isArray(plans) && plans.length ? plans : [createDemoJourneyPlan()];
+    return Array.isArray(plans) ? plans : [createDemoJourneyPlan()];
   } catch {
     return [createDemoJourneyPlan()];
   }

@@ -1,55 +1,14 @@
+"use client";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, ChevronRight, CircleHelp, Settings } from "lucide-react";
-import { experiences } from "@/lib/catalog";
-
+import { CalendarDays, ChevronRight, CircleHelp, Globe2, Heart, Laptop, Moon, ShieldCheck, Sun, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { DemoLogoutButton } from "@/components/AppShell";
+import { getSession } from "@/lib/demo";
+import { readLocal, writeLocal } from "@/lib/traveler";
 export default function AccountPage() {
-  return (
-    <div className="account-page">
-      <div className="account-inner">
-        <div className="account-head">
-          <div>
-            <div className="eyebrow">Traveler account</div>
-            <h1>Welcome back, Maya.</h1>
-            <p className="muted">Everything important about your travel, in one view.</p>
-          </div>
-          <Link className="button button-secondary" href="#preferences"><Settings size={15} /> Account settings</Link>
-        </div>
-
-        <section className="account-main account-simplified">
-          <div className="account-overview-row">
-            <div className="welcome-card">
-              <div>
-                <div className="eyebrow" style={{ color: "#9bd4bd" }}>Travel Buddy Rewards</div>
-                <h2>You have good taste.</h2>
-                <p>Earn $12 more in credit after your next eligible booking.</p>
-              </div>
-              <div className="reward-balance"><span>Your balance</span><strong>$12.40</strong></div>
-            </div>
-            <div className="account-quick-links">
-              <Link href="/wishlist"><CalendarDays size={17} /><span><strong>Trips</strong><small>Open your plans and saved ideas</small></span><ChevronRight size={16} /></Link>
-              <Link href="/support"><CircleHelp size={17} /><span><strong>Help center</strong><small>Questions about a booking?</small></span><ChevronRight size={16} /></Link>
-            </div>
-          </div>
-
-          <div className="portal-card" id="upcoming">
-            <div className="card-topline"><div><div className="eyebrow">Next up</div><h3>Upcoming trip</h3></div><Link href="/wishlist" className="section-link">Open Trips <ArrowRight size={13} /></Link></div>
-            <div className="booking-list"><div className="booking-item"><img className="booking-thumb" src={experiences[0].image} alt="" /><div className="booking-item-main"><h3>{experiences[0].title}</h3><p><CalendarDays size={12} style={{ verticalAlign: "-2px" }} /> Oct 18, 2026 · 5:30 PM · 2 travelers</p></div><span className="status status-confirmed">Confirmed</span><ChevronRight size={16} className="row-arrow" /></div></div>
-          </div>
-
-          <div className="account-history-grid">
-            <div className="portal-card" id="past">
-              <div className="card-topline"><div><div className="eyebrow">Your journey</div><h3>Travel history</h3></div><span className="muted" style={{ fontSize: 11 }}>3 completed trips</span></div>
-              <div className="history-stat"><strong>3</strong><span>stories completed</span><div className="history-line"><i /><i /><i /></div></div>
-              <p className="muted">You have one review waiting to be shared from your last experience.</p>
-              <Link className="button button-ghost" href="/support"><CircleHelp size={14} /> Get help with a booking</Link>
-            </div>
-            <div className="portal-card" id="preferences">
-              <div className="card-topline"><div><div className="eyebrow">Your preferences</div><h3>Travel profile</h3></div><Settings size={17} color="var(--muted)" /></div>
-              <div className="profile-preferences"><span>Traveler type<strong>Curious explorer</strong></span><span>Home currency<strong>USD</strong></span><span>Email updates<strong>On</strong></span></div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+  const [name,setName] = useState("Traveler"); const [theme,setTheme] = useState("light"); const [updates,setUpdates] = useState(false);
+  useEffect(() => {const profile = readLocal<{name:string}>("tb-demo-profile",{name:"Traveler"});setName(getSession()?.name || profile.name);setTheme(readLocal<string>("tb-theme","light"));setUpdates(readLocal<boolean>("tb-email-preference",false));},[]);
+  function changeTheme(value:string) {setTheme(value);writeLocal("tb-theme",value);document.documentElement.dataset.theme = value;}
+  const links = [{title:"My trips",detail:"Plans, itineraries, and demo bookings",href:"/trips",icon:CalendarDays},{title:"Saved experiences",detail:"The places that caught your eye",href:"/saved",icon:Heart},{title:"Help & support",detail:"How the prototype works",href:"/support",icon:CircleHelp}];
+  return <div className="profile-page"><div className="content-width"><div className="page-heading"><div><h1>A little more you.</h1><p>Your travel space, just the way you like it.</p></div></div><div className="profile-layout"><aside className="profile-identity"><div className="profile-avatar"><UserRound size={29} /></div><h2>Hello, {name.split(" ")[0]}.</h2><p>You’re exploring the traveler prototype. Your plans and preferences stay on this device.</p><span className="demo-badge">Local demo profile</span><Link className="button button-secondary button-wide" style={{marginTop:25}} href="/account/profile">Edit demo profile</Link><DemoLogoutButton className="profile-logout" /></aside><div><section className="settings-section"><h2>Your travel essentials</h2>{links.map(({icon:Icon,...link}) => <Link href={link.href} className="settings-row" key={link.title}><Icon size={21} /><div><strong>{link.title}</strong><small>{link.detail}</small></div><ChevronRight size={19} /></Link>)}</section><section className="settings-section"><h2>Make yourself at home</h2><div className="settings-row"><Globe2 size={21} /><div><strong>Language & currency</strong><small>English · USD. This sample catalog uses US dollars.</small></div></div><div className="settings-row">{theme === "dark" ? <Moon size={21} /> : <Sun size={21} />}<div><label htmlFor="appearance"><strong>Appearance</strong></label><small>A comfortable view for wherever you are.</small></div><select id="appearance" value={theme} onChange={(e) => changeTheme(e.target.value)}><option value="light">Light</option><option value="dark">Dark</option></select></div><label className="settings-row"><Heart size={21} /><div><strong>Travel inspiration</strong><small>Save an email preference locally. No emails are sent.</small></div><input type="checkbox" checked={updates} onChange={(e) => {setUpdates(e.target.checked);writeLocal("tb-email-preference",e.target.checked);}} /></label></section><section className="settings-section"><h2>About your workspace</h2><Link href="/account/settings" className="settings-row"><UserRound size={21}/><div><strong>Account settings</strong><small>Reset demo data or sign out.</small></div><ChevronRight size={19}/></Link><Link href="/dashboard" className="settings-row"><CalendarDays size={21}/><div><strong>Your travel dashboard</strong><small>Continue planning and see upcoming bookings.</small></div><ChevronRight size={19}/></Link><div className="settings-row"><ShieldCheck size={21} /><div><strong>Saved on this device</strong><small>Trips, saved ideas, and demo bookings do not sync between devices. Use a trip QR to share a copy.</small></div></div><Link href="/login" className="settings-row"><Laptop size={21} /><div><strong>Explore business workspaces</strong><small>Provider, local guide, and administrator demos.</small></div><ChevronRight size={19} /></Link></section></div></div></div></div>;
 }

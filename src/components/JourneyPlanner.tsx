@@ -1,138 +1,34 @@
 "use client";
-
 import Link from "next/link";
-import { ArrowDown, ArrowUp, CalendarDays, CarFront, Check, CircleCheck, Clock3, GripVertical, Plus, QrCode, ShoppingBag, Sparkles, Trash2, Undo2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { experiences, type Experience } from "@/lib/catalog";
-import { addExperienceToJourneyPlan, createJourneyPlan, getExperienceForJourneyEvent, JOURNEY_CHECKOUT_KEY, readJourneyPlans, writeJourneyPlans, type JourneyEvent, type JourneyPlan } from "@/lib/journey";
-import { JourneyQrCard } from "@/components/JourneyQrCard";
-
-function experienceFor(event: JourneyEvent): Experience {
-  return getExperienceForJourneyEvent(event) || experiences[0];
-}
-
-const rideOptions = [
-  { id: "comfort", label: "Comfort ride", detail: "Private pickup · 12 min", price: 16 },
-  { id: "eco", label: "Eco ride", detail: "Hybrid vehicle · 15 min", price: 12 },
-  { id: "shared", label: "Shared transfer", detail: "Save more · 25 min", price: 7 },
-] as const;
+import { ArrowLeft, ArrowDown, ArrowUp, CalendarDays, CarFront, Check, CircleCheck, GripVertical, MapPin, Plus, QrCode, Share2, ShoppingBag, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { experiences } from "@/lib/catalog";
+import { getExperienceForJourneyEvent, JOURNEY_CHECKOUT_KEY, readJourneyPlans, writeJourneyPlans, type JourneyPlan } from "@/lib/journey";
+import { readLocal, writeLocal } from "@/lib/traveler";
+import { JourneyQrCard } from "./JourneyQrCard";
+import { Dialog } from "./Dialog";
+import { Photo } from "./Photo";
 
 export function SaveToJourneyButton({ experienceId }: { experienceId: string }) {
-  const [saved, setSaved] = useState(false);
-
-  function save() {
-    addExperienceToJourneyPlan(experienceId);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2200);
-  }
-
-  return <button className={`button ${saved ? "button-secondary" : "button-ghost"}`} type="button" onClick={save}>{saved ? <><Check size={15} /> Added to trip plan</> : <><Plus size={15} /> Add to trip plan</>}</button>;
+  const [open, setOpen] = useState(false); const [saved, setSaved] = useState(false);
+  function add(planId: string) { const plans = readJourneyPlans(); writeJourneyPlans(plans.map((plan) => plan.id !== planId || plan.events.some((event) => event.id === experienceId) ? plan : { ...plan, events: [...plan.events, { id: experienceId, day: 1, selected: true, status: "planned" as const }] })); setOpen(false); setSaved(true); }
+  return <div className="save-trip-control"><button className="button button-secondary" onClick={() => setOpen(!open)}>{saved ? <Check size={16} /> : <Plus size={16} />}{saved ? "Added to trip" : "Add to a trip"}</button>{open && <div className="trip-picker"><strong>Choose a trip</strong>{readJourneyPlans().map((plan) => <button key={plan.id} onClick={() => add(plan.id)}>{plan.name}<Plus size={15} /></button>)}<Link href="/trips">Create a new trip <ArrowLeft size={14} /></Link></div>}</div>;
 }
 
-export function JourneyPlanner() {
-  const [plans, setPlans] = useState<JourneyPlan[]>([]);
-  const [activePlanId, setActivePlanId] = useState("");
-  const [showQrFor, setShowQrFor] = useState<JourneyPlan | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newPlanName, setNewPlanName] = useState("");
-  const [notice, setNotice] = useState("");
-  const [rideFor, setRideFor] = useState<string | null>(null);
-  const [rideChoice, setRideChoice] = useState<(typeof rideOptions)[number]["id"]>("comfort");
-  const [rideRequested, setRideRequested] = useState(false);
-
-  useEffect(() => {
-    const load = () => {
-      const loaded = readJourneyPlans();
-      setPlans(loaded);
-      setActivePlanId((current) => current || loaded[0]?.id || "");
-    };
-    load();
-    window.addEventListener("tb-journey-plans-updated", load);
-    return () => window.removeEventListener("tb-journey-plans-updated", load);
-  }, []);
-
-  const activePlan = plans.find((plan) => plan.id === activePlanId) || plans[0];
-  const activeEvents = activePlan?.events || [];
-  const selectedEvents = useMemo(() => activeEvents.filter((event) => event.selected), [activeEvents]);
-  const rideEvent = rideFor ? activeEvents.find((event) => event.id === rideFor && event.status === "completed") : null;
-  const rideExperience = rideEvent ? experienceFor(rideEvent) : null;
-
-  function persist(nextPlans: JourneyPlan[]) {
-    setPlans(nextPlans);
-    writeJourneyPlans(nextPlans);
-  }
-
-  function updateActivePlan(updater: (plan: JourneyPlan) => JourneyPlan) {
-    if (!activePlan) return;
-    persist(plans.map((plan) => plan.id === activePlan.id ? updater({ ...plan, events: [...plan.events] }) : plan));
-  }
-
-  function toggleEvent(eventId: string) {
-    updateActivePlan((plan) => ({ ...plan, events: plan.events.map((event) => event.id === eventId ? { ...event, selected: !event.selected } : event) }));
-  }
-
-  function moveEvent(index: number, direction: -1 | 1) {
-    updateActivePlan((plan) => {
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= plan.events.length) return plan;
-      const events = [...plan.events];
-      [events[index], events[nextIndex]] = [events[nextIndex], events[index]];
-      return { ...plan, events: events.map((event, eventIndex) => ({ ...event, day: eventIndex + 1 })) };
-    });
-  }
-
-  function markComplete(eventId: string) {
-    const currentEvent = activeEvents.find((event) => event.id === eventId);
-    const completing = currentEvent?.status !== "completed";
-    updateActivePlan((plan) => ({ ...plan, events: plan.events.map((event) => event.id === eventId ? { ...event, status: completing ? "completed" : "planned" } : event) }));
-    setRideFor(completing ? eventId : null);
-    setRideRequested(false);
-    setNotice(completing ? "Experience history updated. Choose a simulated pickup for the next leg." : "Experience reopened. The ride handoff is ready again when you finish it.");
-  }
-
-  function requestRide() {
-    if (!activePlan || !rideFor) return;
-    const event = activePlan.events.find((item) => item.id === rideFor);
-    if (!event) return;
-    const ride = rideOptions.find((option) => option.id === rideChoice) || rideOptions[0];
-    window.localStorage.setItem("tb-ride-requests", JSON.stringify({ planId: activePlan.id, eventId: event.id, rideId: ride.id, requestedAt: new Date().toISOString() }));
-    setRideRequested(true);
-  }
-
-  function removeEvent(eventId: string) {
-    updateActivePlan((plan) => ({ ...plan, events: plan.events.filter((event) => event.id !== eventId).map((event, index) => ({ ...event, day: index + 1 })), days: Math.max(1, plan.events.length - 1) }));
-  }
-
-  function createPlan() {
-    const plan = createJourneyPlan(newPlanName.trim() || "A new adventure");
-    const nextPlans = [...plans, plan];
-    persist(nextPlans);
-    setActivePlanId(plan.id);
-    setNewPlanName("");
-    setShowCreate(false);
-  }
-
-  function bookSelected() {
-    if (!activePlan || !selectedEvents.length) return;
-    window.localStorage.setItem(JOURNEY_CHECKOUT_KEY, JSON.stringify({ ...activePlan, events: selectedEvents }));
-    window.location.href = "/checkout?plan=1";
-  }
-
-  if (!activePlan) return null;
-
-  return <section className="journey-planner">
-    <div className="journey-planner-head"><div><div className="eyebrow">Portable trip plans</div><h2>Build a journey, not just a wishlist.</h2><p>Save single experiences or connect a full tour. Reorder the days, share the plan offline, then book what you selected.</p></div><div className="journey-planner-head-actions"><button className="button button-secondary" type="button" onClick={() => setShowCreate(!showCreate)}><Plus size={15} /> New plan</button></div></div>
-    {showCreate && <div className="journey-create-row"><input aria-label="New trip plan name" value={newPlanName} onChange={(event) => setNewPlanName(event.target.value)} placeholder="e.g. Two weeks in Sri Lanka" /><button className="button button-primary" type="button" onClick={createPlan}>Create plan</button></div>}
-    {plans.length > 1 && <div className="journey-plan-tabs">{plans.map((plan) => <button key={plan.id} type="button" className={plan.id === activePlan.id ? "active" : ""} onClick={() => setActivePlanId(plan.id)}>{plan.name}<small>{plan.events.length} events</small></button>)}</div>}
-    <div className="journey-plan-card">
-      <div className="journey-plan-summary"><div><span className="journey-plan-kicker"><CalendarDays size={14} /> {activePlan.days} day plan</span><h3>{activePlan.name}</h3><p>{selectedEvents.length} selected of {activeEvents.length} saved events · Day numbers are stored, not exact times.</p></div><div className="journey-plan-actions"><button className="icon-button" type="button" aria-label="Share journey QR" onClick={() => setShowQrFor(activePlan)}><QrCode size={18} /></button><button className="button button-primary" type="button" disabled={!selectedEvents.length} onClick={bookSelected}><ShoppingBag size={15} /> Book selected</button></div></div>
-      <div className="journey-event-list">{activeEvents.length ? activeEvents.map((event, index) => { const experience = experienceFor(event); const completed = event.status === "completed"; return <article className={`journey-event-row ${event.selected ? "is-selected" : ""} ${completed ? "is-complete" : ""}`} key={`${event.id}-${index}`}><button className={`journey-event-check ${event.selected ? "checked" : ""}`} type="button" aria-label={`${event.selected ? "Deselect" : "Select"} ${experience.title}`} onClick={() => toggleEvent(event.id)}>{event.selected ? <Check size={14} /> : null}</button><div className="journey-event-day"><span>Day</span><strong>{event.day}</strong></div><img src={experience.image} alt="" /><div className="journey-event-copy"><div className="journey-event-title"><span className="eyebrow">{experience.destination} · {experience.category}</span>{completed && <span className="journey-complete-pill"><CircleCheck size={13} /> Completed</span>}</div><Link href={`/experience/${experience.id}`}><h4>{experience.title}</h4></Link><p>{experience.duration} · from ${experience.price} per adult</p></div><div className="journey-event-controls"><button type="button" className="icon-button" aria-label={`Move ${experience.title} up`} onClick={() => moveEvent(index, -1)} disabled={index === 0}><ArrowUp size={15} /></button><button type="button" className="icon-button" aria-label={`Move ${experience.title} down`} onClick={() => moveEvent(index, 1)} disabled={index === activeEvents.length - 1}><ArrowDown size={15} /></button><button type="button" className="icon-button" aria-label={`${completed ? "Reopen" : "Mark"} ${experience.title}`} onClick={() => markComplete(event.id)}>{completed ? <Undo2 size={15} /> : <Sparkles size={15} />}</button><button type="button" className="icon-button danger-icon" aria-label={`Remove ${experience.title}`} onClick={() => removeEvent(event.id)}><Trash2 size={15} /></button></div></article>; }) : <div className="journey-empty"><GripVertical size={22} /><strong>Your plan is ready for its first story.</strong><span>Add an experience from any detail page.</span></div>}</div>
-      {notice && <div className="journey-transport-notice"><span className="transport-pulse"><Sparkles size={15} /></span><div><strong>Next step after completion</strong><p>{notice}</p></div><button type="button" className="button button-secondary" onClick={() => setNotice("")}>Dismiss</button></div>}
-      {rideEvent && rideExperience && <div className="journey-ride-card"><div className="journey-ride-heading"><div><span className="eyebrow"><CarFront size={13} /> Dummy transport handoff</span><h3>Ready for the next leg?</h3><p>Choose a pickup after {rideExperience.title}. This is a local demo — no ride service is contacted.</p></div><span className="journey-ride-badge"><Clock3 size={13} /> After Day {rideEvent.day}</span></div><div className="journey-ride-options">{rideOptions.map((option) => <button key={option.id} type="button" className={`journey-ride-option ${rideChoice === option.id ? "is-active" : ""}`} onClick={() => { setRideChoice(option.id); setRideRequested(false); }}><span className="journey-ride-radio">{rideChoice === option.id ? <Check size={12} /> : null}</span><span><strong>{option.label}</strong><small>{option.detail}</small></span><b>${option.price}</b></button>)}</div><div className="journey-ride-footer">{rideRequested ? <span className="journey-ride-confirmed"><CircleCheck size={16} /> Pickup saved to this trip</span> : <span className="journey-ride-footnote">A pickup handoff will be attached to the completed experience.</span>}<button type="button" className="button button-primary" onClick={requestRide}>{rideRequested ? "Pickup saved" : "Request pickup"}</button></div></div>}
-      <div className="journey-plan-foot"><span><ShieldIcon /> Offline-ready bundle · no online storage</span><span>Share one compact QR for the whole trip</span></div>
-    </div>
-    {showQrFor && <JourneyQrCard plan={showQrFor} onClose={() => setShowQrFor(null)} />}
-  </section>;
+export function JourneyPlanner({ planId }: { planId?: string }) {
+  const [plans, setPlans] = useState<JourneyPlan[]>([]); const [loaded, setLoaded] = useState(false); const [day, setDay] = useState(1); const [showQr, setShowQr] = useState(false); const [sharing, setSharing] = useState(false); const [adding, setAdding] = useState(false); const [dragged, setDragged] = useState<string | null>(null); const [transportFor, setTransportFor] = useState<string | null>(null); const [transport, setTransport] = useState<Record<string, string>>({});
+  useEffect(() => { setPlans(readJourneyPlans()); setTransport(readLocal<Record<string,string>>("tb-trip-transport", {})); setLoaded(true); }, []);
+  const plan = plans.find((item) => item.id === planId) || (!planId ? plans[0] : undefined);
+  if (!loaded) return <div className="workspace-page content-width"><p role="status">Opening your trip…</p></div>;
+  if (!plan) return <div className="workspace-page content-width empty-state"><CalendarDays size={35} /><h1>This trip isn’t on this device.</h1><p>Import its QR or open one of your saved plans.</p><Link className="button button-primary" href="/trips">My trips</Link></div>;
+  const current = plan;
+  const events = current.events.filter((event) => event.day === day); const selected = current.events.filter((event) => event.selected); const total = selected.reduce((sum,event) => sum + (getExperienceForJourneyEvent(event)?.price || 0),0);
+  function update(updater: (value: JourneyPlan) => JourneyPlan) { const next = plans.map((item) => item.id === current.id ? updater(item) : item); setPlans(next); writeJourneyPlans(next); }
+  function reorder(id: string, targetId: string) { update((value) => { const next = [...value.events]; const source = next.findIndex((event) => event.id === id); const target = next.findIndex((event) => event.id === targetId); if (source < 0 || target < 0) return value; const [event] = next.splice(source,1); next.splice(target,0,event); return { ...value, events: next }; }); }
+  function move(id: string, direction: number) { const index = events.findIndex((event) => event.id === id); const target = events[index + direction]; if (target) reorder(id,target.id); }
+  function add(id: string) { update((value) => ({ ...value, events: [...value.events, { id, day, selected: true, status: "planned" }] })); setAdding(false); }
+  function book() { window.localStorage.setItem(JOURNEY_CHECKOUT_KEY, JSON.stringify({ ...current, events: selected })); window.location.href = "/checkout?plan=1"; }
+  function attachRide(ride: string) { if (!transportFor) return; const next = { ...transport, [`${current.id}:${transportFor}`]: ride }; setTransport(next); writeLocal("tb-trip-transport",next); setTransportFor(null); }
+  return <div className="planner-page"><div className="content-width"><Link href="/trips" className="back-link"><ArrowLeft size={16} /> My trips</Link><div className="planner-heading"><div><div className="planner-title-row"><h1>{current.name}</h1>{current.id === "journey-sri-lanka-highlights" && <span className="demo-badge">Sample plan</span>}</div><p><CalendarDays size={16} /> {current.days} days <span>·</span> {current.events.length} experiences <span>·</span> Saved on this device</p></div><div className="planner-actions"><button className="button button-secondary" onClick={() => setSharing(!sharing)}><Share2 size={16} /> Share trip</button><button className="button button-primary" onClick={book} disabled={!selected.length}><ShoppingBag size={16} /> Book selected</button></div></div>{sharing && <div className="share-options"><div><strong>Take a copy of your trip with you.</strong><p>QR sharing carries your plan. Changes stay on each device.</p></div><button className="button button-secondary" onClick={() => setShowQr(true)}><QrCode size={17} /> Generate QR</button><Link className="button button-secondary" href="/scan">Scan or import text</Link></div>}<div className="planner-workspace"><aside className="planner-days"><h2>Your days</h2><div className="day-tabs" role="tablist" aria-label="Trip days">{Array.from({length: current.days},(_,i) => i + 1).map((value) => <button key={value} role="tab" aria-selected={day === value} className={day === value ? "active" : ""} onClick={() => setDay(value)}><span>Day {value}</span><small>{current.events.filter((event) => event.day === value).length} {current.events.filter((event) => event.day === value).length === 1 ? "experience" : "experiences"}</small></button>)}</div><button className="text-link" onClick={() => { update((value) => ({...value,days: Math.min(99,value.days+1)})); setDay(Math.min(99,current.days+1)); }} disabled={current.days >= 99}><Plus size={16} /> Add day</button></aside><section className="planner-timeline"><div className="timeline-heading"><div><span className="card-location">Your itinerary</span><h2>Day {day}</h2></div><button className="icon-button" aria-label={`Add experience to day ${day}`} onClick={() => setAdding(!adding)}><Plus size={20} /></button></div><div className="timeline-events">{events.length ? events.map((event,index) => { const experience = getExperienceForJourneyEvent(event); if (!experience) return null; const ride = transport[`${current.id}:${event.id}`]; return <article className={`timeline-event ${event.status === "completed" ? "completed" : ""}`} key={event.id} draggable onDragStart={() => setDragged(event.id)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => {e.preventDefault(); if (dragged) reorder(dragged,event.id); setDragged(null); }}><div className="timeline-marker">{event.status === "completed" ? <Check size={13} /> : index+1}</div><div className="timeline-event-body"><div className="timeline-event-main"><Photo src={experience.image} alt="" /><div><span className="card-location">{experience.destination} · {experience.category}</span><Link href={`/experience/${experience.id}`}><h3>{experience.title}</h3></Link><p>{experience.duration} · ${experience.price} / person</p></div><GripVertical className="drag-handle" size={18} aria-hidden="true" /></div><div className="timeline-event-options"><label className="filter-option"><input type="checkbox" checked={event.selected} onChange={(e) => update((value) => ({...value,events:value.events.map((item) => item.id === event.id ? {...item,selected:e.target.checked} : item)}))} /> Include in booking</label><select aria-label={`Day for ${experience.title}`} value={event.day} onChange={(e) => update((value) => ({...value,events:value.events.map((item) => item.id === event.id ? {...item,day:Number(e.target.value)} : item)}))}>{Array.from({length:current.days},(_,i) => <option key={i} value={i+1}>Day {i+1}</option>)}</select><div className="event-controls"><button className="icon-button" onClick={() => move(event.id,-1)} disabled={index === 0} aria-label={`Move ${experience.title} earlier`}><ArrowUp size={15} /></button><button className="icon-button" onClick={() => move(event.id,1)} disabled={index === events.length-1} aria-label={`Move ${experience.title} later`}><ArrowDown size={15} /></button><button className="icon-button" onClick={() => update((value) => ({...value,events:value.events.map((item) => item.id === event.id ? {...item,status:item.status === "completed" ? "planned" : "completed"} : item)}))} aria-label={`${event.status === "completed" ? "Reopen" : "Complete"} ${experience.title}`}><CircleCheck size={16} /></button><button className="icon-button danger-icon" onClick={() => update((value) => ({...value,events:value.events.filter((item) => item.id !== event.id)}))} aria-label={`Remove ${experience.title}`}><Trash2 size={15} /></button></div></div><div className="itinerary-connections"><button className="text-link" onClick={() => setTransportFor(event.id)}><CarFront size={15} /> {ride ? `${ride} · demo` : "Add transport"}</button><Link href={`/guide?zone=${encodeURIComponent(experience.destination)}`} className="text-link"><MapPin size={15} /> Explore local guides</Link>{event.status === "completed" && <span className="complete-note"><Check size={13} /> Completed</span>}</div></div></article>; }) : <div className="day-empty"><CompassIcon /><h3>An open day. A fresh possibility.</h3><p>Add something you’d love to do.</p></div>}</div><button className="add-experience-button" onClick={() => setAdding(!adding)}><Plus size={19} /> Add an experience</button>{adding && <div className="planner-add-list"><div><h3>Find a place for day {day}</h3><button className="icon-button" aria-label="Close experience picker" onClick={() => setAdding(false)}><X size={18} /></button></div>{experiences.filter((item) => !current.events.some((event) => event.id === item.id)).map((item) => <button key={item.id} onClick={() => add(item.id)}><Photo src={item.image} alt="" /><span><strong>{item.title}</strong><small>{item.destination} · {item.duration} · ${item.price}</small></span><Plus size={17} /></button>)}<Link className="text-link" href="/search">Browse the full collection</Link></div>}</section><aside className="trip-overview"><h2>The journey at a glance</h2><div className="trip-route-list">{Array.from(new Set(current.events.map((event) => getExperienceForJourneyEvent(event)?.destination).filter(Boolean))).map((place) => <span key={place}><MapPin size={15} />{place}</span>)}</div><dl><div><dt>Days to discover</dt><dd>{current.days}</dd></div><div><dt>Experiences</dt><dd>{current.events.length}</dd></div><div><dt>Selected for booking</dt><dd>{selected.length}</dd></div></dl><div className="estimated-cost"><span>Estimated experiences</span><strong>${total}</strong><small>Per person · Fees shown at checkout</small></div><p>Arrange experiences in the order you like. Exact dates and start times are chosen during booking.</p><Link className="text-link" href="/saved">Browse saved ideas <ArrowLeft size={14} /></Link></aside></div></div>{showQr && <JourneyQrCard plan={current} onClose={() => setShowQr(false)} />}{transportFor && <Dialog label="Transport options" onClose={() => setTransportFor(null)}><div className="sheet-heading"><h2>Connect the next leg.</h2><button className="icon-button" aria-label="Close transport" onClick={() => setTransportFor(null)}><X size={20} /></button></div><p className="inline-note">These are planning notes. No ride service is contacted and no price is included in checkout.</p>{["Private transfer", "Shared transfer", "Arrange my own transport"].map((ride) => <button className="transport-note-option" key={ride} onClick={() => attachRide(ride)}><CarFront size={20} />{ride}<Plus size={16} /></button>)}</Dialog>}</div>;
 }
-
-function ShieldIcon() { return <span className="journey-foot-check"><Check size={11} /></span>; }
+function CompassIcon() { return <CalendarDays size={29} />; }

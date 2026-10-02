@@ -1,0 +1,1 @@
+import { DemoRegistration } from "@/components/DemoAuth"; export default function Page(){return <DemoRegistration role="provider"/>;}

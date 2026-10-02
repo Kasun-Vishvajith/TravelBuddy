@@ -1,49 +1,23 @@
 "use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CalendarDays, Compass, MapPinned, Search, ShoppingBag, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
-
+import { usePathname, useRouter } from "next/navigation";
+import { CalendarDays, Compass, Heart, MapPinned, Search, ShoppingBag, UserRound, ArrowUpRight, LogOut } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { readLocal } from "@/lib/traveler";
+import { getSession, signOut, roleHome, type DemoAccount } from "@/lib/demo";
+export function Brand() { return <Link href="/" className="brand" aria-label="TravelBuddy home"><span className="brand-mark"><Compass size={23} strokeWidth={1.8} /></span><span>travel<span>buddy</span><i>.</i></span></Link>; }
+export function DemoLogoutButton({ className = "" }: { className?: string }) { const router = useRouter(); return <button type="button" className={`demo-logout-button ${className}`} onClick={() => { signOut(); router.replace("/login"); }}><LogOut size={18} aria-hidden="true" /><span>Log out</span></button>; }
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [cartCount, setCartCount] = useState(0);
-  useEffect(() => {
-    const update = () => setCartCount(Number(window.localStorage.getItem("tb-cart-count") || 0));
-    update();
-    window.addEventListener("tb-cart-updated", update);
-    return () => window.removeEventListener("tb-cart-updated", update);
-  }, []);
-  const mobileNav = [
-    { label: "Explore", href: "/", icon: <Compass size={20} /> },
-    { label: "Discover", href: "/search", icon: <Search size={20} /> },
-    { label: "Guides", href: "/guide", icon: <MapPinned size={20} /> },
-    { label: "Trips", href: "/wishlist", icon: <CalendarDays size={20} /> },
-    { label: "Account", href: "/account", icon: <UserRound size={20} /> },
-  ];
-  const isPortalRoute = ["/supplier", "/advisor", "/partner", "/admin"].some((route) => pathname === route || pathname.startsWith(`${route}/`));
-  return (
-    <div className={`app-shell ${isPortalRoute ? "portal-app-shell" : ""}`}>
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="Travel Buddy home"><span className="brand-mark"><Compass size={17} strokeWidth={2.5} /></span><span>travel<span>buddy</span></span></Link>
-        <nav className="desktop-nav"><Link className={pathname === "/" ? "active" : ""} href="/">Explore</Link><Link className={pathname === "/search" ? "active" : ""} href="/search">Discover</Link><Link className={pathname === "/wishlist" ? "active" : ""} href="/wishlist">Trips</Link><Link className={pathname === "/guide" ? "active" : ""} href="/guide">Guides</Link></nav>
-        <div className="header-actions">
-          <Link href="/cart" className="cart-button"><ShoppingBag size={18} /><span>Cart</span>{cartCount > 0 && <b>{cartCount}</b>}</Link>
-          <Link href="/login" className="account-button"><UserRound size={17} /><span>Log in</span></Link>
-        </div>
-      </header>
-      <main>{children}</main>
-      <nav className="mobile-bottom-nav" aria-label="Primary navigation">
-        {mobileNav.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname === item.href;
-          return <Link key={item.href} href={item.href} className={active ? "active" : ""}>{item.icon}<span>{item.label}</span></Link>;
-        })}
-      </nav>
-      <footer className="site-footer"><div className="footer-main"><div><Link href="/" className="brand footer-brand"><span className="brand-mark"><Compass size={17} strokeWidth={2.5} /></span><span>travel<span>buddy</span></span></Link><p>Make every trip a story worth telling.</p></div><div><h4>Discover</h4><Link href="/search">Things to do</Link><Link href="/destinations">Top destinations</Link><Link href="/inspiration">Travel inspiration</Link></div><div><h4>Travel Buddy</h4><Link href="/about">About us</Link><Link href="/support">Help center</Link><Link href="/supplier">List your experience</Link></div><div><h4>Get the app</h4><p className="muted">Your next adventure is always within reach.</p><div className="app-badges"><span> App Store</span><span>▶ Google Play</span></div></div></div><div className="footer-bottom"><span>© 2026 Travel Buddy</span><span>English (US) · USD</span><span>Privacy · Terms · Accessibility</span></div></footer>
-    </div>
-  );
+  const pathname = usePathname(); const [cartCount, setCartCount] = useState(0); const [session,setSession] = useState<DemoAccount|null>(null); const [ready,setReady] = useState(false);
+  useEffect(() => {const update=()=>{setSession(getSession());setReady(true);};update();window.addEventListener('tb-session-updated',update);window.addEventListener('tb-demo-updated',update);return()=>{window.removeEventListener('tb-session-updated',update);window.removeEventListener('tb-demo-updated',update);};},[]);
+  useEffect(() => { document.documentElement.dataset.theme = readLocal<string>("tb-theme", "light"); }, []);
+  useEffect(() => { const update = () => setCartCount(Number(window.localStorage.getItem("tb-cart-count") || 0)); update(); window.addEventListener("tb-cart-updated", update); return () => window.removeEventListener("tb-cart-updated", update); }, []);
+  const portal = ["/supplier", "/guide-workspace", "/advisor", "/partner", "/admin"].some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  const focused = pathname === "/checkout" || pathname.startsWith("/login") || pathname.startsWith("/register");
+  const needsTraveler = ['/trips','/saved','/checkout','/booking','/account','/scan'].some(route=>pathname===route||pathname.startsWith(route+'/'));
+  const content = needsTraveler && !ready ? <div className="workspace-loading" role="status">Opening your travel space…</div> : needsTraveler && session?.role !== 'traveler' ? <div className="workspace-access content-width"><h1>Your travel space awaits.</h1><p>Use a traveler demo profile to manage trips, saved experiences, and simulated bookings.</p><Link className="button button-primary" href="/login">Sign in as traveler</Link>{session&&<Link className="text-link" href={roleHome[session.role]}>Return to your workspace</Link>}<p className="demo-disclosure">Frontend role checks are a simulation, not secure access control.</p></div> : children;
+  const active = (href: string) => href === "/" ? pathname === "/" || ["/search", "/destinations", "/experience", "/inspiration"].some((route) => pathname.startsWith(route)) : href === "/trips" ? pathname.startsWith("/trips") || pathname === "/wishlist" || pathname === "/scan" || pathname.startsWith("/booking") : pathname.startsWith(href);
+  const navigation = [{ label: "Explore", href: "/", icon: Compass }, { label: "Trips", href: "/trips", icon: CalendarDays }, { label: "Guides", href: "/guide", icon: MapPinned }, { label: "Profile", href: "/account", icon: UserRound }];
+  return <div className={`app-shell ${portal ? "portal-app-shell" : ""} ${focused ? "focused-shell" : ""}`}><a href="#main-content" className="skip-link">Skip to content</a>{!portal && !pathname.startsWith("/login") && !pathname.startsWith("/register") && <header className="site-header"><Brand />{!focused && <nav className="desktop-nav" aria-label="Traveler navigation">{navigation.slice(0, 3).map((item) => <Link key={item.href} href={item.href} className={active(item.href) ? "active" : ""} aria-current={active(item.href) ? "page" : undefined}>{item.label === "Trips" ? "My Trips" : item.label === "Guides" ? "Local Guides" : item.label}</Link>)}</nav>}{!focused && session && <Link className="workspace-shortcut text-link" href={roleHome[session.role]}>My workspace</Link>}<div className="header-actions">{focused ? <Link className="text-link" href="/">Back to Explore</Link> : <><Link href="/saved" className="header-icon" aria-label="Saved experiences"><Heart size={20} /></Link><Link href="/cart" className="header-icon cart-button" aria-label={`Cart${cartCount ? `, ${cartCount} item` : ""}`}><ShoppingBag size={20} />{cartCount > 0 && <b>{cartCount}</b>}</Link><Link href={session ? (session.role === "traveler" ? "/account" : roleHome[session.role]) : "/login"} className={`account-button ${active("/account") ? "active" : ""}`}><UserRound size={18} /><span>{session ? "Profile" : "Sign in"}</span></Link>{session && <DemoLogoutButton />}</>}</div></header>}<main id="main-content">{content}</main>{!portal && !focused && <><nav className="mobile-bottom-nav" aria-label="Traveler navigation">{navigation.map(({ icon: Icon, ...item }) => <Link key={item.href} href={item.href} className={active(item.href) ? "active" : ""} aria-current={active(item.href) ? "page" : undefined}><span><Icon size={22} /></span>{item.label}</Link>)}</nav><footer className="site-footer"><div className="footer-main"><div><Brand /><p>A little curiosity.<br />A whole world to discover.</p></div><div><h4>Go explore</h4><Link href="/search">All experiences</Link><Link href="/destinations">Destinations</Link><Link href="/guide">Local guides</Link></div><div><h4>Make it yours</h4><Link href="/trips">My trips</Link><Link href="/saved">Saved experiences</Link><Link href="/support">Help & support</Link></div><div><h4>TravelBuddy for business</h4><Link href="/login">Explore demo workspaces <ArrowUpRight size={14} /></Link><p className="footer-demo">Prototype experience.<br />Sample listings. No real charges.</p></div></div><div className="footer-bottom"><span>© 2026 TravelBuddy</span><span>English · Prices in USD</span><Link href="/support">About this prototype</Link></div></footer></>}</div>;
 }
-
-export function SearchBar({ compact = false }: { compact?: boolean }) {
-  return <form className={`search-bar ${compact ? "compact" : ""}`} action="/search"><div className="search-field"><Search size={19} /><div><label>Where to?</label><input name="q" placeholder="City, attraction or experience" /></div></div><div className="search-field date-field"><CalendarDays size={18} /><div><label>When</label><input name="date" type="date" aria-label="Choose a date" /></div></div><button type="submit" className="button button-primary search-submit"><Search size={18} /><span>Search</span></button></form>;
-}
+export function SearchBar({ compact = false }: { compact?: boolean }) { const id = useId(); return <form className={`search-bar ${compact ? "compact" : ""}`} action="/search"><div className="search-field"><MapPinned size={22} /><div><label htmlFor={`${id}-q`}>Where would you like to go?</label><input id={`${id}-q`} name="q" placeholder="Destination or experience" autoComplete="off" /></div></div><div className="search-field date-field"><CalendarDays size={21} /><div><label htmlFor={`${id}-date`}>When?</label><input id={`${id}-date`} name="date" type="date" /></div></div><button type="submit" className="button button-primary search-submit"><Search size={19} /><span>Explore</span></button></form>; }

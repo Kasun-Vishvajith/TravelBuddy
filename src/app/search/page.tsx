@@ -1,59 +1,23 @@
 "use client";
-
-import { useMemo, useState } from "react";
-import { RotateCcw, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, RotateCcw, SlidersHorizontal, Search, X, CalendarDays } from "lucide-react";
+import { Dialog } from "@/components/Dialog";
 import { ExperienceCard } from "@/components/ExperienceCard";
-import { SearchBar } from "@/components/AppShell";
-import { categories, experiences } from "@/lib/catalog";
+import { experiences } from "@/lib/catalog";
+import { publicExperiences } from '@/lib/demo';
 
-type SearchParams = { q?: string; category?: string };
-
-const priceFilters = [
-  { value: "under-50", label: "Under $50" },
-  { value: "50-100", label: "$50–$100" },
-  { value: "100-plus", label: "$100+" },
-];
-
-const ratingFilters = [
-  { value: "4.5", label: "4.5 and up" },
-  { value: "4.0", label: "4.0 and up" },
-];
-
-const bookingFilters = [
-  { value: "free-cancellation", label: "Free cancellation" },
-  { value: "pay-later", label: "Reserve now, pay later" },
-  { value: "pickup", label: "Hotel pickup" },
-];
-
-export default function SearchPage({ searchParams }: { searchParams: SearchParams }) {
-  const query = searchParams.q || searchParams.category || "Everywhere";
-  const categoryOptions = categories.slice(0, 6);
-  const initialCategory = searchParams.category && categoryOptions.includes(searchParams.category) ? [searchParams.category] : [];
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory);
-  const [selectedPrices, setSelectedPrices] = useState<string[]>([]);
-  const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
-  const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
-  const toggleValue = (value: string, selected: string[], setSelected: (values: string[]) => void) => {
-    setSelected(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
-  };
-
+export default function SearchPage({ searchParams }: { searchParams: { q?: string; category?: string; date?: string } }) {
+  const [catalog,setCatalog]=useState(experiences);useEffect(()=>{const load=()=>setCatalog(publicExperiences());load();window.addEventListener('tb-demo-updated',load);return()=>window.removeEventListener('tb-demo-updated',load);},[]);
+  const [selectedCategories, setCategories] = useState<string[]>(searchParams.category ? [searchParams.category] : []);
+  const [destination, setDestination] = useState(""); const [price, setPrice] = useState("any"); const [duration, setDuration] = useState("any"); const [rating, setRating] = useState(false); const [flexible, setFlexible] = useState(false); const [smallGroup, setSmallGroup] = useState(false); const [sort, setSort] = useState("recommended"); const [open, setOpen] = useState(false);
+  const query = searchParams.q || "";
   const results = useMemo(() => {
-    return experiences
-      .filter((experience) => !searchParams.q || `${experience.title} ${experience.destination} ${experience.category}`.toLowerCase().includes(searchParams.q.toLowerCase()))
-      .filter((experience) => !selectedCategories.length || selectedCategories.includes(experience.category))
-      .filter((experience) => !selectedPrices.length || selectedPrices.some((price) => price === "under-50" ? experience.price < 50 : price === "50-100" ? experience.price >= 50 && experience.price <= 100 : experience.price > 100))
-      .filter((experience) => !selectedRatings.length || selectedRatings.some((rating) => experience.rating >= Number(rating)))
-      .filter((experience) => !selectedBookings.length || selectedBookings.some((booking) => booking === "free-cancellation" ? experience.freeCancellation : booking === "pay-later" ? experience.payLater : experience.pickup));
-  }, [searchParams.q, selectedBookings, selectedCategories, selectedPrices, selectedRatings]);
-
-  const clearFilters = () => {
-    setSelectedCategories([]);
-    setSelectedPrices([]);
-    setSelectedRatings([]);
-    setSelectedBookings([]);
-  };
-
-  return <div className="search-page"><div className="search-header"><div className="search-header-inner"><div className="breadcrumb">Discover / Experiences</div><h1>Find something in {query}</h1><SearchBar compact /></div></div><div className="search-results-layout"><aside className={`filter-panel ${filtersOpen ? "filter-panel-open" : ""}`}><div className="filter-panel-head"><h3>Refine results</h3><button type="button" className="clear-filters-button" onClick={clearFilters}><RotateCcw size={12} /> Clear</button></div><div className="filter-group"><h4>Categories</h4>{categoryOptions.map((category) => <label className="filter-option" key={category}><input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => toggleValue(category, selectedCategories, setSelectedCategories)} />{category}</label>)}</div><div className="filter-group"><h4>Price per adult</h4>{priceFilters.map((filter) => <label className="filter-option" key={filter.value}><input type="checkbox" checked={selectedPrices.includes(filter.value)} onChange={() => toggleValue(filter.value, selectedPrices, setSelectedPrices)} />{filter.label}</label>)}</div><div className="filter-group"><h4>Traveler rating</h4>{ratingFilters.map((filter) => <label className="filter-option" key={filter.value}><input type="checkbox" checked={selectedRatings.includes(filter.value)} onChange={() => toggleValue(filter.value, selectedRatings, setSelectedRatings)} />{filter.label}</label>)}</div><div className="filter-group"><h4>Booking options</h4>{bookingFilters.map((filter) => <label className="filter-option" key={filter.value}><input type="checkbox" checked={selectedBookings.includes(filter.value)} onChange={() => toggleValue(filter.value, selectedBookings, setSelectedBookings)} />{filter.label}</label>)}</div></aside><section><div className="results-toolbar"><strong>{results.length} {results.length === 1 ? "experience" : "experiences"}</strong><div className="results-toolbar-actions"><select className="sort-select" defaultValue="recommended"><option value="recommended">Recommended</option><option>Top rated</option><option>Price: low to high</option><option>Newest</option></select><button type="button" className="button button-secondary mobile-filter" onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={15} /> Filters</button></div></div>{results.length ? <div className="results-grid">{results.map((experience) => <ExperienceCard key={experience.id} experience={experience} />)}</div> : <div className="empty-results"><h3>No experiences match those filters.</h3><p>Try clearing a filter or choosing a broader option.</p><button type="button" className="clear-filters-button" onClick={clearFilters}><RotateCcw size={12} /> Clear filters</button></div>}</section></div></div>;
+    const filtered = catalog.filter((item) => (!query || `${item.title} ${item.destination} ${item.country} ${item.category}`.toLowerCase().includes(query.toLowerCase())) && (!selectedCategories.length || selectedCategories.includes(item.category)) && (!destination || item.destination === destination) && (price === "any" || (price === "under50" ? item.price < 50 : price === "50to100" ? item.price >= 50 && item.price <= 100 : item.price > 100)) && (duration === "any" || (duration === "short" ? (item.duration.includes("minute") ? parseFloat(item.duration)/60 : parseFloat(item.duration)) <= 4 : (item.duration.includes("minute") ? parseFloat(item.duration)/60 : parseFloat(item.duration)) > 4)) && (!rating || item.rating >= 4.8) && (!flexible || item.freeCancellation) && (!smallGroup || item.description.toLowerCase().includes("small") || item.options.some((option) => /max (10|12|6)|small group/i.test(option.detail))));
+    return sort === "price" ? filtered.sort((a,b) => a.price - b.price) : sort === "rating" ? filtered.sort((a,b) => b.rating - a.rating) : filtered;
+  }, [catalog, query, selectedCategories, destination, price, duration, rating, flexible, smallGroup, sort]);
+  const clear = () => { setCategories([]); setDestination(""); setPrice("any"); setDuration("any"); setRating(false); setFlexible(false); setSmallGroup(false); };
+  const chips = [...selectedCategories.map((category) => ({ label: category, clear: () => setCategories(selectedCategories.filter((item) => item !== category)) })), ...(destination ? [{ label: destination, clear: () => setDestination("") }] : []), ...(price !== "any" ? [{ label: price === "under50" ? "Under $50" : price === "50to100" ? "$50–$100" : "$100+", clear: () => setPrice("any") }] : []), ...(duration !== "any" ? [{ label: duration === "short" ? "Up to 4 hours" : "Over 4 hours", clear: () => setDuration("any") }] : []), ...(rating ? [{ label: "4.8+ rating", clear: () => setRating(false) }] : []), ...(flexible ? [{ label: "Free cancellation", clear: () => setFlexible(false) }] : []), ...(smallGroup ? [{ label: "Small groups", clear: () => setSmallGroup(false) }] : [])];
+  const filters = (suffix:string) => <><div className="filter-panel-head"><h2>Find your kind of day</h2><button className="icon-button mobile-only" aria-label="Close filters" onClick={() => setOpen(false)}><X size={21} /></button></div><div className="filter-group"><label htmlFor={`filter-destination-${suffix}`}>Destination</label><select id={`filter-destination-${suffix}`} value={destination} onChange={(e) => setDestination(e.target.value)}><option value="">Everywhere</option>{Array.from(new Set(catalog.map((item) => item.destination))).map((place) => <option key={place}>{place}</option>)}</select></div><fieldset className="filter-group"><legend>Experience type</legend>{Array.from(new Set(catalog.map((item) => item.category))).map((category) => <label className="filter-option" key={category}><input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => setCategories(selectedCategories.includes(category) ? selectedCategories.filter((item) => item !== category) : [...selectedCategories, category])} />{category}</label>)}</fieldset><div className="filter-group"><label htmlFor={`filter-price-${suffix}`}>Price per person</label><select id={`filter-price-${suffix}`} value={price} onChange={(e) => setPrice(e.target.value)}><option value="any">Any price</option><option value="under50">Under $50</option><option value="50to100">$50–$100</option><option value="over100">Over $100</option></select></div><div className="filter-group"><label htmlFor={`filter-duration-${suffix}`}>Time to explore</label><select id={`filter-duration-${suffix}`} value={duration} onChange={(e) => setDuration(e.target.value)}><option value="any">Any duration</option><option value="short">Up to 4 hours</option><option value="long">Over 4 hours</option></select></div><fieldset className="filter-group"><legend>A few preferences</legend><label className="filter-option"><input type="checkbox" checked={rating} onChange={(e) => setRating(e.target.checked)} />Rated 4.8 and above</label><label className="filter-option"><input type="checkbox" checked={flexible} onChange={(e) => setFlexible(e.target.checked)} />Free cancellation</label><label className="filter-option"><input type="checkbox" checked={smallGroup} onChange={(e) => setSmallGroup(e.target.checked)} />Small groups</label></fieldset><button type="button" className="text-link filter-reset" onClick={clear} disabled={!chips.length}><RotateCcw size={15} /> Reset filters</button><button className="button button-primary button-wide mobile-only filter-apply" onClick={() => setOpen(false)}>Show {results.length} experiences</button></>;
+  return <div className="discovery-page"><div className="content-width"><Link href="/" className="back-link"><ArrowLeft size={16} /> Explore</Link><div className="page-heading"><div><h1>{query ? `A little more ${query}.` : "Find your next experience."}</h1><p>Choose what moves you. Make the day your own.</p></div><span className="demo-badge">Sample collection</span></div><form action="/search" className="discovery-search"><Search size={21} /><input name="q" aria-label="Search destinations and experiences" placeholder="Search a destination or experience" defaultValue={query} /><div className="discovery-date"><CalendarDays size={17} /><input name="date" type="date" aria-label="Travel date" defaultValue={searchParams.date} /></div><button className="button button-primary" type="submit">Search</button></form>{searchParams.date && <p className="inline-note">Travel date: {searchParams.date}. Dates carry into booking options; this sample catalog does not filter live availability.</p>}<div className="discovery-layout"><aside className="filter-panel desktop-filters">{filters("desktop")}</aside><section className="discovery-results"><div className="results-toolbar"><strong>{results.length} experiences to discover</strong><div className="results-toolbar-actions"><select aria-label="Sort experiences" className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}><option value="recommended">Recommended</option><option value="rating">Top rated</option><option value="price">Price: low to high</option></select><button className="button button-secondary mobile-filter" onClick={() => setOpen(true)}><SlidersHorizontal size={17} /> Filters{chips.length > 0 && ` (${chips.length})`}</button></div></div>{chips.length > 0 && <div className="filter-chips">{chips.map((chip) => <button key={chip.label} onClick={chip.clear}>{chip.label}<X size={14} /></button>)}</div>}{results.length ? <div className="results-grid">{results.map((experience) => <ExperienceCard key={experience.id} experience={experience} date={searchParams.date} />)}</div> : <div className="empty-state"><Search size={32} /><h2>A different direction?</h2><p>No experiences match this search. Clear your filters or try a broader destination.</p><button className="button button-secondary" onClick={clear}>Reset filters</button><Link className="text-link" href="/search">Explore everything</Link></div>}</section></div></div>{open && <Dialog className="filter-sheet" label="Experience filters" onClose={() => setOpen(false)}>{filters("mobile")}</Dialog>}</div>;
 }
