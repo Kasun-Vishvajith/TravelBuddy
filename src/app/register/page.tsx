@@ -1,2 +1,1 @@
-import { AuthForm } from "@/components/AuthForm";
-export default function RegisterPage() {return <AuthForm register />;}
+import { RegistrationChoice } from "@/components/DemoAuth"; export default function Page(){return <RegistrationChoice/>;}

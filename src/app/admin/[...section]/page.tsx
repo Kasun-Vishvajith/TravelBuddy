@@ -1,0 +1,1 @@
+import { DemoWorkspace } from "@/components/DemoWorkspace"; export default function Page({params}:{params:{section:string[]}}){return <DemoWorkspace role="admin" section={params.section}/>;}

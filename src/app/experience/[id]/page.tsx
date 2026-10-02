@@ -11,12 +11,14 @@ import { SaveToJourneyButton } from "@/components/JourneyPlanner";
 import { readSaved, toggleSaved } from "@/lib/traveler";
 import { JOURNEY_CHECKOUT_KEY } from "@/lib/journey";
 import { Photo } from "@/components/Photo";
+import { getDemo, getSession, toExperience } from '@/lib/demo';
 
 type BookingStep = "details" | "transfer-choice" | "journey";
 const LAST_TRAVELERS_KEY = "tb-last-travelers";
 
 export default function ExperiencePage({ params, searchParams }: { params: { id: string }; searchParams: { date?: string } }) {
-  const experience = getExperience(params.id) || experiences[0];
+  const [experience,setExperience] = useState(getExperience(params.id) || experiences[0]);
+  const [found,setFound] = useState(Boolean(getExperience(params.id)));
   const [option, setOption] = useState(0);
   const [date, setDate] = useState("2026-10-18");
   const [time, setTime] = useState(experience.options[0].times[0]);
@@ -30,12 +32,13 @@ export default function ExperiencePage({ params, searchParams }: { params: { id:
   const isYala = experience.id === "yala-safari";
 
   useEffect(() => {
+    const local=getDemo().listings.find(l=>l.id===params.id&&l.status==='Active');setFound(Boolean(local));if(local){setOption(0);setExperience(toExperience(local));setTime(local.time||experience.options[0].times[0]);}
     setReady(true);
     if (searchParams.date && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date)) setDate(searchParams.date);
     setSaved(readSaved().includes(experience.id));
     const stored = Number(window.localStorage.getItem(LAST_TRAVELERS_KEY));
     if (stored >= 1 && stored <= 6) setTravelers(stored);
-  }, []);
+  }, [params.id]);
 
   function rememberTravelers(value: number) {
     setTravelers(value);
@@ -88,7 +91,8 @@ export default function ExperiencePage({ params, searchParams }: { params: { id:
     addToCart(transportOnly);
   }
 
-  if (!getExperience(params.id)) return <div className="empty-state"><h1>We couldn’t find that experience.</h1><Link className="button button-primary" href="/search">Explore experiences</Link></div>;
+  if (!ready) return <div className="workspace-loading" role="status">Opening experience…</div>;
+  if (!found) return <div className="empty-state"><h1>We couldn’t find that experience.</h1><Link className="button button-primary" href="/search">Explore experiences</Link></div>;
   return (
     <div className="product-page">
       <div className="product-crumb"><Link href="/">Home</Link> / <Link href="/search">{experience.destination}</Link> / {experience.title}</div>
@@ -96,7 +100,7 @@ export default function ExperiencePage({ params, searchParams }: { params: { id:
         <div className="product-title-block">
           <div className="card-location"><MapPin size={14} /> {experience.destination}, {experience.country} · {experience.category} · {experience.duration}</div>
           <h1>{experience.title}</h1>
-          <div className="product-meta"><span className="rating-stars"><Star size={15} fill="currentColor" /> {experience.rating}</span><span>{experience.reviews.toLocaleString()} sample reviews</span><span>·</span><span>{experience.supplier}</span><button className="button button-ghost" aria-pressed={saved} onClick={() => setSaved(toggleSaved(experience.id))}><Heart size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save"}</button><SaveToJourneyButton experienceId={experience.id} /><span className="demo-badge">Sample experience</span></div>
+          <div className="product-meta"><span className="rating-stars"><Star size={15} fill="currentColor" /> {experience.rating}</span><span>{experience.reviews.toLocaleString()} sample reviews</span><span>·</span><span>{experience.supplier}</span><button className="button button-ghost" aria-pressed={saved} onClick={() => {if(getSession()?.role!=="traveler"){window.location.href="/login";return;}setSaved(toggleSaved(experience.id));}}><Heart size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save"}</button><SaveToJourneyButton experienceId={experience.id} /><span className="demo-badge">Sample experience</span></div>
         </div>
         <div className={`product-gallery gallery-count-${experience.gallery.length}`}>{experience.gallery.map((photo,index) => <Photo key={`${photo}-${index}`} className={index === 0 ? "gallery-main" : ""} src={photo} alt={index === 0 ? experience.title : `${experience.destination} experience photograph ${index + 1}`} priority={index === 0} />)}</div>
         <div className="product-layout">

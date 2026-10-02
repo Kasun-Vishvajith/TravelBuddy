@@ -1,2 +1,1 @@
-import { SupplierEditor } from "@/components/SupplierEditor";
-export default function NewProductPage(){return <SupplierEditor />;}
+import { ListingEditor } from "@/components/DemoWorkspace"; export default function Page(){return <ListingEditor/>;}
