@@ -21,7 +21,7 @@ export function DemoLogin() {
         const account = signIn(email, password);
         setSuccess(true);
         await new Promise(resolve => setTimeout(resolve, 250));
-        router.push(roleHome[account.role]);
+        router.push(account.role === 'traveler' ? '/' : roleHome[account.role]);
     }
     catch (err) {
         setError(err instanceof Error ? err.message : 'Allow browser storage and try again.');
@@ -71,7 +71,7 @@ export function DemoRegistration({ role }: {
     } }
     function enter() { try {
         const a = signIn(fields.email, 'demo123');
-        router.push(roleHome[a.role]);
+        router.push(a.role === 'traveler' ? '/' : roleHome[a.role]);
     }
     catch {
         setError('Allow browser storage and try again.');

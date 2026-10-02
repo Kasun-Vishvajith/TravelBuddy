@@ -8,3 +8,41 @@
 .demo-auth,.registration-form-page{min-height:100dvh}.demo-auth-image{min-height:100dvh}
 .management-metrics:has(>div:nth-child(6)){grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:1100px){.management-metrics:has(>div:nth-child(6)){grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Visible session controls across traveler and business workspaces. */
+.demo-logout-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);font:600 13px var(--heading);white-space:nowrap;cursor:pointer;flex-shrink:0}
+.demo-logout-button:hover{background:var(--mint)}
+.demo-logout-button:focus-visible{outline:2px solid var(--mint-dark);outline-offset:3px}
+.workspace-account-actions{display:flex;align-items:center;gap:16px}
+.profile-logout{margin-top:12px;width:100%}
+@media(max-width:767px){.header-actions .demo-logout-button{padding-inline:9px;font-size:12px;margin-left:6px}.workspace-account-actions{gap:10px}.workspace-account-actions .demo-logout-button{padding-inline:10px;font-size:12px}}
+/* Keep booking details readable instead of squeezing four items into one row. */
+@media(max-width:767px){
+  .bookings-list .booking-row{display:grid;grid-template-columns:64px minmax(0,1fr) 20px;align-items:start;gap:12px 14px;padding:16px}
+  .bookings-list .booking-row>img,.bookings-list .booking-row>.photo-fallback{grid-column:1;grid-row:1;width:64px;height:80px;min-width:0}
+  .bookings-list .booking-row>div:not(.photo-fallback){grid-column:2 / -1;grid-row:1;min-width:0}
+  .bookings-list .booking-row h2{font-size:16px;line-height:1.4;margin:8px 0;overflow-wrap:anywhere}
+  .bookings-list .booking-row p{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+  .bookings-list .booking-row small{display:block;margin-top:6px;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+  .bookings-list .booking-row>strong{grid-column:2;grid-row:2;margin:0;font-size:18px;line-height:1.4}
+  .bookings-list .booking-row>svg{grid-column:3;grid-row:2;align-self:center;justify-self:end}
+}
+/* Discovery filters share the marketplace's calm teal controls and readable rhythm. */
+@media(min-width:768px){
+  .discovery-layout{grid-template-columns:260px minmax(0,1fr);gap:32px}
+  .desktop-filters{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:24px 20px;align-self:start}
+  .desktop-filters .filter-panel-head{margin-bottom:26px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .desktop-filters .filter-panel-head h2{font-size:20px;line-height:1.4;letter-spacing:-.02em;color:var(--ink);text-wrap:balance}
+  .desktop-filters .filter-group{padding-bottom:22px;margin-bottom:22px}
+  .desktop-filters .filter-group>label:not(.filter-option),.desktop-filters .filter-group legend{display:block;float:none;width:auto;margin-bottom:12px;font:650 13px var(--heading);color:var(--ink)}
+  .desktop-filters .filter-group select{min-height:46px;padding:11px 12px;font:500 13px var(--heading);border-radius:8px;background:var(--bg,var(--white));cursor:pointer}
+  .desktop-filters .filter-group .filter-option{min-height:44px;padding:9px 8px;margin:2px -8px;gap:11px;line-height:1.5;font-size:13px;color:var(--muted);border-radius:7px;cursor:pointer;transition:background .18s ease,color .18s ease}
+  .desktop-filters .filter-option:hover{background:var(--mint);color:var(--ink)}
+  .desktop-filters .filter-option:has(input:checked){background:var(--mint);color:var(--ink);font-weight:600}
+  .desktop-filters .filter-option input{width:18px;height:18px;margin:0;accent-color:var(--mint-dark)}
+  .desktop-filters .filter-group select:focus-visible,.desktop-filters .filter-option input:focus-visible{outline:2px solid var(--mint-dark);outline-offset:3px}
+  .desktop-filters .filter-reset{display:flex;justify-content:center;width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--mint-dark)}
+  .desktop-filters .filter-reset:hover:not(:disabled){background:var(--mint);text-decoration:none}
+  .desktop-filters .filter-reset:disabled{color:var(--muted);opacity:.65;cursor:default}
+}
+@media(min-width:768px) and (max-width:1024px){.discovery-layout{grid-template-columns:240px minmax(0,1fr);gap:24px}.desktop-filters{padding:22px 18px}}
+@media(prefers-reduced-motion:reduce){.desktop-filters .filter-group .filter-option{transition:none}}
