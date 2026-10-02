@@ -25,6 +25,7 @@ type EncodedJourney = {
   v: 1;
   n: string;
   d: number;
+  s?: string;
   e: [string, number, 0 | 1, 0 | 1][];
 };
 
@@ -67,6 +68,7 @@ export function encodeJourneyPlan(plan: JourneyPlan): string {
     v: 1,
     n: plan.name.slice(0, 60),
     d: Math.max(1, Math.min(99, Math.round(plan.days))),
+    s: plan.startDate,
     e: plan.events.map((event) => [event.id, Math.max(1, Math.min(99, Math.round(event.day))), event.selected ? 1 : 0, event.status === "completed" ? 1 : 0]),
   };
   const json = JSON.stringify(compact);
@@ -79,18 +81,21 @@ export function encodeJourneyPlan(plan: JourneyPlan): string {
 export function decodeJourneyPayload(payload: string): JourneyPlan | null {
   try {
     const trimmed = payload.trim();
+    if (trimmed.length > 30000) return null;
     if (!trimmed.startsWith(JOURNEY_QR_PREFIX)) return null;
     const encoded = trimmed.slice(JOURNEY_QR_PREFIX.length).replace(/-/g, "+").replace(/_/g, "/");
     const padded = encoded.padEnd(Math.ceil(encoded.length / 4) * 4, "=");
     const binary = atob(padded);
     const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
     const data = JSON.parse(new TextDecoder().decode(bytes)) as EncodedJourney;
-    if (data.v !== 1 || !data.n || !Array.isArray(data.e)) return null;
+    if (data.v !== 1 || typeof data.n !== 'string' || !data.n.trim() || data.n.length > 60 || !Number.isInteger(data.d) || data.d < 1 || data.d > 99 || !Array.isArray(data.e) || data.e.length > 100) return null;
+    if (data.s && !/^\d{4}-\d{2}-\d{2}$/.test(data.s)) return null;
+    if (!data.e.every(e=>Array.isArray(e) && e.length === 4 && Number.isInteger(e[1]) && e[1] >= 1 && e[1] <= data.d && [0,1].includes(e[2]) && [0,1].includes(e[3]))) return null;
     const events = data.e
       .filter((event) => Array.isArray(event) && typeof event[0] === "string" && experiences.some((item) => item.id === event[0]))
       .map(([id, day, selected, completed]) => ({ id, day: Math.max(1, Number(day) || 1), selected: selected === 1, status: completed === 1 ? "completed" : "planned" } as JourneyEvent));
-    if (!events.length) return null;
-    return { id: createId(), name: data.n, days: Math.max(1, Number(data.d) || 1), createdAt: new Date().toISOString(), events };
+    if (!events.length || new Set(events.map(e=>e.id)).size !== events.length) return null;
+    return { id: createId(), name: data.n, days: data.d, startDate: data.s, createdAt: new Date().toISOString(), events };
   } catch {
     return null;
   }
